@@ -1,4 +1,4 @@
-SUBDIRS = SimpMeas lvv
+SUBDIRS = sm lvv
 
 .PHONY: all $(SUBDIRS)
 
