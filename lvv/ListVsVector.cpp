@@ -65,15 +65,6 @@ using namespace std;
 
 namespace utils {
 
-/**
- * @brief for use by @gen
- */
-random_device rd;
-
-/**
- * @brief for use by @random_int
- */
-mt19937 gen(rd());
 
 /**
  * @brief generate a uniformly distributed random integer between min and max (inclusive)
@@ -82,7 +73,7 @@ mt19937 gen(rd());
  * @param max maximum value (inclusive)
  * @return int a random integer between min and max (inclusive)
  */
-int random_int(int min, int max)
+int random_int(int min, int max, mt19937& gen)
 {
     auto dist = uniform_int_distribution<>(min, max);
     return dist(gen);
@@ -94,13 +85,14 @@ int random_int(int min, int max)
  * @param n number of integers to generate
  * @param min minimum value (inclusive)
  * @param max maximum value (inclusive)
+ * @param gen random number generator
  * @return set<int> a set of n uniformly distributed random integers between min and max (inclusive)
  */
-unordered_set<int> generate_n_random_ints(size_t n, int min, int max)
+unordered_set<int> generate_n_random_ints(size_t n, int min, int max, mt19937& gen)
 {
     unordered_set<int> s;
     while (s.size() < n) {
-        s.insert(random_int(min, max));
+        s.insert(random_int(min, max, gen));
     }
     return s;
 }
@@ -187,7 +179,7 @@ public:
      * @return false if the sequence is not empty
      */
     virtual bool empty() = 0;
-    virtual ~IntegerSequence() {};
+    virtual ~IntegerSequence() = default;
 
     /**
      * @brief fill the sequence incrementally with the values in s in numerical order
@@ -217,15 +209,11 @@ private:
     list<int> l;
 
 public:
-    ListAdaptor(list<int> l)
+    explicit ListAdaptor(list<int> const& l)
         : l(l)
     {
     }
-    ListAdaptor()
-        : l()
-    {
-    }
-
+    ListAdaptor() = default;
     void insert_numerical(int n) override
     {
         utils::insert_in_numerical_order(l, n);
@@ -263,14 +251,11 @@ private:
     vector<int> v;
 
 public:
-    VectorAdaptor(vector<int> v)
+    explicit VectorAdaptor(vector<int> const& v)
         : v(v)
     {
     }
-    VectorAdaptor()
-        : v()
-    {
-    }
+    VectorAdaptor() = default;
     void insert_numerical(int n) override
     {
         utils::insert_in_numerical_order(v, n);
@@ -302,8 +287,8 @@ public:
 
 namespace db {
 
-int NUM_INTS = 1'000'000;
-string INT_DB_REL_PATH = "./random_ints.txt";
+constexpr int NUM_INTS = 1'000'000;
+const string INT_DB_REL_PATH = "./random_ints.txt";
 
 unordered_set<int> read_int_db()
 {
@@ -326,7 +311,7 @@ unordered_set<int> read_int_db()
 
 }
 
-void inline _test(IntegerSequence& seq, size_t test_num, unordered_set<int> s)
+void inline _test(IntegerSequence& seq, size_t test_num, unordered_set<int> s, mt19937& gen)
 {
     auto itr = s.begin();
     for (size_t i = 0; i < test_num; ++i) {
@@ -334,23 +319,23 @@ void inline _test(IntegerSequence& seq, size_t test_num, unordered_set<int> s)
     }
 
     while (!seq.empty()) {
-        size_t i = utils::random_int(0, (int)(seq.size() - 1));
+        size_t i = utils::random_int(0, (int)(seq.size() - 1), gen);
         seq.remove(i);
     }
 }
 
 constexpr size_t NUM_RUNS = 3;
-chrono::nanoseconds test(IntegerSequence& seq, size_t test_num, unordered_set<int> s)
+chrono::nanoseconds test(IntegerSequence& seq, size_t test_num, unordered_set<int> const& s, mt19937& gen)
 {
     /* first do a warmup... */
-    _test(seq, test_num, s);
+    _test(seq, test_num, s, gen);
     /* ... ok, now we measure */
     chrono::nanoseconds avg(0);
     for (size_t i = 0; i < NUM_RUNS; ++i) {
         // reseed the random number generator
-        utils::gen.seed(utils::rd());
+        gen.seed(random_device{}());
         auto start = chrono::high_resolution_clock::now();
-        _test(seq, test_num, s);
+        _test(seq, test_num, s, gen);
         auto end = chrono::high_resolution_clock::now();
         avg += chrono::duration_cast<chrono::nanoseconds>(end - start);
     }
@@ -365,10 +350,13 @@ int main(int argc, char const* argv[])
     } else if (argc == 1) {
         num_tests = NUM_TESTS;
     } else if (argc == 2) {
+        num_tests = atoi(argv[1]);
     } else /* argc > 2 */ {
         cerr << "Usage: " << argv[0] << " [optional: number of tests to run]" << endl;
         exit(1);
     }
+
+    mt19937 gen(random_device{}());
 
     /* Time to fetch our set of ints. Ideally there is a database available */
     unordered_set<int> s;
@@ -377,14 +365,14 @@ int main(int argc, char const* argv[])
     if (int_db) {
         s = unordered_set<int>(db::read_int_db());
     } else {
-        s = utils::generate_n_random_ints(db::NUM_INTS, INT_MIN, INT_MAX);
+        s = utils::generate_n_random_ints(db::NUM_INTS, INT_MIN, INT_MAX, gen);
     }
     for (size_t i = 1563; i < num_tests; ++i) {
         auto v = VectorAdaptor();
         auto l = ListAdaptor();
 
-        auto vec_duration = test(v, i, s);
-        auto list_duration = test(l, i, s);
+        chrono::nanoseconds vec_duration = test(v, i, s, gen);
+        chrono::nanoseconds list_duration = test(l, i, s, gen);
 
         chrono::nanoseconds diff_nano = chrono::abs(vec_duration - list_duration);
         chrono::microseconds diff_micro = chrono::duration_cast<chrono::microseconds>(diff_nano);
