@@ -1,12 +1,24 @@
+UNAME_S := $(shell uname -s)
+
 CC = g++
-CFLAGS = -Wall -Wpedantic -O2 -std=c++20
-TARGET = lvv
-SOURCE = ListVsVector.cpp
+CFLAGS = -g -Wall -Wpedantic -O2 -std=c++20
+TARGETS = lvv test_n csv
+# SOURCES = lvv.cpp test_n.cpp csv.cpp
+LIBS :=
+ifeq ($(UNAME_S),Linux)
+    LIBS += -lpthread
+endif
 
-all: $(TARGET)
+all: $(TARGETS)
 
-$(TARGET): $(SOURCE)
-	$(CC) $(CFLAGS) -o $(TARGET) $(SOURCE)
+lvv: lvv.cpp
+	$(CC) $(CFLAGS) -o lvv lvv.cpp $(LIBS)
+
+csv: csv.cpp
+	$(CC) $(CFLAGS) -o csv csv.cpp $(LIBS)
+
+test_n: test_n.cpp
+	$(CC) $(CFLAGS) -o test_n test_n.cpp $(LIBS)
 
 clean:
-	rm -f $(TARGET)
+	rm -f $(TARGETS)
