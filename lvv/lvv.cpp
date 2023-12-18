@@ -126,7 +126,7 @@ const unordered_set<int> INT_SET = fetch_int_set(db::NUM_INTS);
 void inline test_n_core_(IntegerSequence& seq, size_t num_vals,
                          const vector<size_t>& removal_indices)
 {
-    // assert(INT_SET.size() >= test_num && removal_indices.size() == test_num)
+    assert(INT_SET.size() >= num_vals && removal_indices.size() == num_vals);
     auto itr = INT_SET.begin();
     for(size_t i = 0; i < num_vals; i++) { seq.insert_numerical(*itr++); }
     for(size_t i: removal_indices) { seq.remove(i); }
@@ -194,6 +194,7 @@ pair<chrono::nanoseconds, chrono::nanoseconds> test_n(size_t num_vals,
     }
     assert(removal_indices[removal_indices.size() - 1] == 0); // sanity check
 
+    // TODO: see if we can avoid duplicating knowledge cleanly
     // ! agh now we've duplicated knowledge because
     // ! num_vals == removal_indices.size()
 
