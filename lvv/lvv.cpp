@@ -122,11 +122,22 @@ const unordered_set<int> INT_SET = fetch_int_set(db::NUM_INTS);
 /**
  * @brief INTERNAL: the timed test function. The caller will be timing this
  * function, so it should not do any blocking behavior
+ *
+ * @param removal_indices a vector dictating the order in which to remove
+ * elements.
+ * @details removal_indices[i] is the index of the element to remove on the ith
+ *          iteration. So for example, given sequence {1, 2, 4, 5} and removal
+ *          indices {1, 2, 0, 0}, the sequence would be reduced to {1, 4, 5},
+ *          then {1, 4}, then {4}, then {}.
+ *          Note that the size of removal_indices indicates the number of
+ *          values that will be inserted and removed.
  */
-void inline test_n_core_(IntegerSequence& seq, size_t num_vals,
+void inline test_n_core_(IntegerSequence& seq,
                          const vector<size_t>& removal_indices)
 {
-    assert(INT_SET.size() >= num_vals && removal_indices.size() == num_vals);
+    const size_t num_vals = removal_indices.size();
+    assert(INT_SET.size() >= num_vals);
+
     auto itr = INT_SET.begin();
     for(size_t i = 0; i < num_vals; i++) { seq.insert_numerical(*itr++); }
     for(size_t i: removal_indices) { seq.remove(i); }
@@ -139,28 +150,30 @@ void inline test_n_core_(IntegerSequence& seq, size_t num_vals,
  *
  * @param seq the sequence to test
  * @param num_vals the number of values to insert and remove
- * @param removal_indices a vector dictating the order in which to remove
- * elements.
- * @details removal_indices[i] is the index of the element to remove on the ith
- *          iteration. So for example, given sequence {1, 2, 4, 5} and removal
- *          indices {1, 2, 0, 0}, the sequence would be reduced to {1, 4, 5},
- *          then {1, 4}, then {4}, then {}. *
  * @param promise the promise to set the result on
  * @param num_runs how many times to run the test
  *
  * @return chrono::nanoseconds the average time it took to run the test
  */
 chrono::nanoseconds test_n_(IntegerSequence& seq, size_t num_vals,
-                            const vector<size_t>& removal_indices,
                             promise<chrono::nanoseconds> promise,
-                            size_t num_runs = 3)
+                            size_t num_runs = DEFAULT_RUNS_PER_TEST)
 {
     chrono::nanoseconds avg{0};
     for(size_t i = 0; i < num_runs; ++i) {
+        // I don't reseeding is necessary but prof. wants us to do it
         gen.seed(random_device{}());
 
+        vector<size_t> removal_indices{num_vals};
+        for(size_t front = 0, back = num_vals - 1; front < num_vals;
+            front++, back--) {
+            removal_indices[front] = utils::random_int(0, (int)back);
+        }
+        assert(removal_indices[removal_indices.size() - 1]
+               == 0); // sanity check
+
         auto start = chrono::high_resolution_clock::now();
-        test_n_core_(seq, num_vals, removal_indices);
+        test_n_core_(seq, removal_indices);
         auto end = chrono::high_resolution_clock::now();
 
         avg += chrono::duration_cast<chrono::nanoseconds>(end - start);
@@ -182,21 +195,9 @@ chrono::nanoseconds test_n_(IntegerSequence& seq, size_t num_vals,
  *         took to run the test for the vector and the list, respectively
  */
 pair<chrono::nanoseconds, chrono::nanoseconds> test_n(size_t num_vals,
-                                                      size_t num_runs)
+                                                      size_t num_runs = DEFAULT_RUNS_PER_TEST)
 {
     assert(INT_SET.size() >= num_vals);
-
-    vector<size_t> removal_indices(num_vals);
-    size_t end = num_vals - 1;
-    for(size_t start = 0; start < num_vals; start++) {
-        removal_indices[start] = utils::random_int(0, (int)end);
-        end--;
-    }
-    assert(removal_indices[removal_indices.size() - 1] == 0); // sanity check
-
-    // TODO: see if we can avoid duplicating knowledge cleanly
-    // ! agh now we've duplicated knowledge because
-    // ! num_vals == removal_indices.size()
 
     VectorAdaptor v{};
     ListAdaptor l{};
@@ -207,10 +208,8 @@ pair<chrono::nanoseconds, chrono::nanoseconds> test_n(size_t num_vals,
     future<chrono::nanoseconds> vec_future = vec_promise.get_future();
     future<chrono::nanoseconds> list_future = list_promise.get_future();
 
-    jthread vec_thread(test_n_, ref(v), num_vals, ref(removal_indices),
-                       move(vec_promise), num_runs);
-    jthread list_thread(test_n_, ref(l), num_vals, ref(removal_indices),
-                        move(list_promise), num_runs);
+    jthread vec_thread(test_n_, ref(v), num_vals, move(vec_promise), num_runs);
+    jthread list_thread(test_n_, ref(l), num_vals, move(list_promise), num_runs);
 
     chrono::nanoseconds vec_duration = vec_future.get();
     chrono::nanoseconds list_duration = list_future.get();

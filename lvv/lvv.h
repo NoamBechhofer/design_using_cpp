@@ -201,7 +201,4 @@ public:
     ~VectorAdaptor() override = default;
 };
 
-extern std::pair<std::chrono::nanoseconds, std::chrono::nanoseconds>
-test_n(size_t num_vals, size_t num_runs = DEFAULT_RUNS_PER_TEST);
-
 #endif // LVV_H
