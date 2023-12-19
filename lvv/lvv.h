@@ -4,6 +4,7 @@
 #include <cassert>
 #include <chrono>
 #include <future>
+#include <iostream>
 #include <list>
 #include <random>
 #include <unordered_set>
@@ -30,6 +31,20 @@ namespace utils {
     int random_int(int min, int max)
     {
         auto dist = std::uniform_int_distribution<>(min, max);
+        return dist(gen);
+    }
+
+    /**
+     * @brief generate a uniformly distributed random size_t between min and
+     * max (inclusive)
+     *
+     * @param min minimum value (inclusive)
+     * @param max maximum value (inclusive)
+     * @return size_t a random size_t between min and max (inclusive)
+     */
+    size_t random_size_t(size_t min, size_t max)
+    {
+        auto dist = std::uniform_int_distribution<size_t>(min, max);
         return dist(gen);
     }
 
