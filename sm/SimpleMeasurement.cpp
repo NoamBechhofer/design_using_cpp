@@ -49,81 +49,78 @@ constexpr int VECTOR_SIZE = 1'000'000'000;
 
 namespace tests {
 
-chrono::nanoseconds test_c_style(vector<int>& v)
-{
-    auto start = chrono::high_resolution_clock::now();
-    int sum = 0;
-    for (int i = 0; i < (int)v.size(); ++i)
-        sum += v[i];
-    auto end = chrono::high_resolution_clock::now();
-    cerr << sum << endl;
-    return chrono::duration_cast<chrono::nanoseconds>(end - start);
-}
+    chrono::nanoseconds test_c_style(vector<int>& v)
+    {
+        auto start = chrono::high_resolution_clock::now();
+        int sum = 0;
+        for(int i = 0; i < (int)v.size(); ++i) sum += v[i];
+        auto end = chrono::high_resolution_clock::now();
+        cerr << sum << endl;
+        return chrono::duration_cast<chrono::nanoseconds>(end - start);
+    }
 
-chrono::nanoseconds test_c_style_unsigned(vector<int>& v)
-{
-    auto start = chrono::high_resolution_clock::now();
-    int sum = 0;
-    for (unsigned int i = 0; i < v.size(); ++i)
-        sum += v[i];
-    auto end = chrono::high_resolution_clock::now();
-    cerr << sum << endl;
-    return chrono::duration_cast<chrono::nanoseconds>(end - start);
-}
+    chrono::nanoseconds test_c_style_unsigned(vector<int>& v)
+    {
+        auto start = chrono::high_resolution_clock::now();
+        int sum = 0;
+        for(unsigned int i = 0; i < v.size(); ++i) sum += v[i];
+        auto end = chrono::high_resolution_clock::now();
+        cerr << sum << endl;
+        return chrono::duration_cast<chrono::nanoseconds>(end - start);
+    }
 
-chrono::nanoseconds test_range_for_loop(vector<int>& v)
-{
-    auto start = chrono::high_resolution_clock::now();
-    int sum = 0;
-    for (auto& i : v)
-        sum += i;
-    auto end = chrono::high_resolution_clock::now();
-    cerr << sum << endl;
-    return chrono::duration_cast<chrono::nanoseconds>(end - start);
-}
+    chrono::nanoseconds test_range_for_loop(const vector<int>& v)
+    {
+        auto start = chrono::high_resolution_clock::now();
+        int sum = 0;
+        for(const auto& i: v) sum += i;
+        auto end = chrono::high_resolution_clock::now();
+        cerr << sum << endl;
+        return chrono::duration_cast<chrono::nanoseconds>(end - start);
+    }
 
-chrono::nanoseconds test_for_each(vector<int>& v)
-{
-    auto start = chrono::high_resolution_clock::now();
-    int sum = 0;
-    for_each(v.begin(), v.end(), [&sum](int i) { sum += i; });
-    auto end = chrono::high_resolution_clock::now();
-    cerr << sum << endl;
-    return chrono::duration_cast<chrono::nanoseconds>(end - start);
-}
+    chrono::nanoseconds test_for_each(vector<int>& v)
+    {
+        auto start = chrono::high_resolution_clock::now();
+        int sum = 0;
+        for_each(v.begin(), v.end(), [&sum](int i) { sum += i; });
+        auto end = chrono::high_resolution_clock::now();
+        cerr << sum << endl;
+        return chrono::duration_cast<chrono::nanoseconds>(end - start);
+    }
 
-chrono::nanoseconds test_accumulate(vector<int>& v)
-{
-    auto start = chrono::high_resolution_clock::now();
-    int sum = accumulate(v.begin(), v.end(), 0);
-    auto end = chrono::high_resolution_clock::now();
-    cerr << sum << endl;
-    return chrono::duration_cast<chrono::nanoseconds>(end - start);
-}
+    chrono::nanoseconds test_accumulate(vector<int>& v)
+    {
+        auto start = chrono::high_resolution_clock::now();
+        int sum = accumulate(v.begin(), v.end(), 0);
+        auto end = chrono::high_resolution_clock::now();
+        cerr << sum << endl;
+        return chrono::duration_cast<chrono::nanoseconds>(end - start);
+    }
 
-chrono::nanoseconds test_accumulate_sqrt_abs(vector<int>& v)
-{
-    auto start = chrono::high_resolution_clock::now();
-    int sum = accumulate(v.begin(), v.end(), 0, [](int a, int b) {
-        return a + sqrt(abs(b));
-    });
-    auto end = chrono::high_resolution_clock::now();
-    cerr << sum << endl;
-    return chrono::duration_cast<chrono::nanoseconds>(end - start);
-}
+    chrono::nanoseconds test_accumulate_sqrt_abs(vector<int>& v)
+    {
+        auto start = chrono::high_resolution_clock::now();
+        int sum = accumulate(v.begin(), v.end(), 0,
+                             [](int a, int b) { return a + sqrt(abs(b)); });
+        auto end = chrono::high_resolution_clock::now();
+        cerr << sum << endl;
+        return chrono::duration_cast<chrono::nanoseconds>(end - start);
+    }
 
-/*
- * this is error prone, but I don't want to use a macro and C++ doesn't have
- * reflection
- */
-vector<pair<string, function<chrono::nanoseconds(std::vector<int>&)>>> test_functions = {
-    make_pair("C-style loop", test_c_style),
-    make_pair("C-style loop (unsigned)", test_c_style_unsigned),
-    make_pair("range for loop", test_range_for_loop),
-    make_pair("for_each", test_for_each),
-    make_pair("accumulate", test_accumulate),
-    make_pair("accumulate (sqrt(abs()))", test_accumulate_sqrt_abs),
-};
+    /*
+     * this is error prone, but I don't want to use a macro and C++ doesn't have
+     * reflection
+     */
+    const vector<pair<string, function<chrono::nanoseconds(std::vector<int>&)>>>
+        test_functions = {
+            make_pair("C-style loop", test_c_style),
+            make_pair("C-style loop (unsigned)", test_c_style_unsigned),
+            make_pair("range for loop", test_range_for_loop),
+            make_pair("for_each", test_for_each),
+            make_pair("accumulate", test_accumulate),
+            make_pair("accumulate (sqrt(abs()))", test_accumulate_sqrt_abs),
+    };
 
 } // namespace tests
 
@@ -131,48 +128,30 @@ void run_tests()
 {
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<> dis(1, 100);
+    std::uniform_int_distribution dis(1, 100);
 
     cerr << "this might take a while.\n";
     std::vector<int> v;
     cerr << "filling vector" << flush;
-    for (int n = 0; n < VECTOR_SIZE; ++n) {
-        if (n % (VECTOR_SIZE / 100) == 0)
-            cerr << "." << flush;
-        ;
+    for(int n = 0; n < VECTOR_SIZE; ++n) {
+        if(n % (VECTOR_SIZE / 100) == 0) cerr << "." << flush;
         v.push_back(dis(gen));
     }
     cerr << "\ndone. vector size: " << v.size() << endl;
 
-    for (auto& test : tests::test_functions) {
+    for(auto& [test_name, test_func]: tests::test_functions) {
         chrono::nanoseconds sum = chrono::nanoseconds::zero();
-        for (int i = 0; i < NUM_RUNS; ++i) {
-            cerr << "running " << test.first << " iteration " << i + 1 << "/" << NUM_RUNS << "\n";
-            sum += test.second(v);
+        for(int i = 0; i < NUM_RUNS; ++i) {
+            cerr << "running " << test_name << " iteration " << i + 1 << "/"
+                 << NUM_RUNS << "\n";
+            sum += test_func(v);
         }
         chrono::nanoseconds avg = sum / NUM_RUNS;
-        chrono::milliseconds avg_ms = chrono::duration_cast<chrono::milliseconds>(avg);
-        cerr << test.first << " finished\n";
-        cout << test.first << ":\t" << avg_ms.count() << " ms\n";
+        chrono::milliseconds avg_ms
+            = chrono::duration_cast<chrono::milliseconds>(avg);
+        cerr << test_name << " finished\n";
+        cout << test_name << ":\t" << avg_ms.count() << " ms\n";
     }
-
-    /*
-    size_t num_tests = tests::test_functions.size();
-    auto records = make_unique<chrono::nanoseconds[]>(num_tests);
-
-    for (size_t i = 0; i < NUM_RUNS; i++) {
-        for (size_t j = 0; j < num_tests; j++) {
-            cerr << "running " << tests::test_functions[j].first << "\n";
-            records[j] += tests::test_functions[j].second(v);
-        }
-        cerr << "iteration " << i + 1 << "/" << NUM_RUNS << "\n";
-    }
-    for (size_t i = 0; i < num_tests; i++) {
-        records[i] /= NUM_RUNS;
-        chrono::milliseconds avg_ms = chrono::duration_cast<chrono::milliseconds>(records[i]);
-        cout << tests::test_functions[i].first << ":\t" << avg_ms.count() << " ms\n";
-    }
-    //*/
 }
 
 int main(void)
