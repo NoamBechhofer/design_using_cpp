@@ -161,16 +161,16 @@ chrono::nanoseconds test_n_(IntegerSequence& seq, size_t num_vals,
 {
     chrono::nanoseconds avg{0};
     for(size_t i = 0; i < num_runs; ++i) {
-        // I don't reseeding is necessary but prof. wants us to do it
+        // I don't think reseeding is necessary but prof. wants us to do it
         gen.seed(random_device{}());
 
         vector<size_t> removal_indices{num_vals};
-        for(size_t front = 0, back = num_vals - 1; front < num_vals;
-            front++, back--) {
-            removal_indices[front] = utils::random_int(0, (int)back);
+        for (size_t back = num_vals - 1; back < SIZE_MAX; back--) {
+            removal_indices.emplace_back(utils::random_size_t(0, back));
         }
-        assert(removal_indices[removal_indices.size() - 1]
-               == 0); // sanity check
+
+        // sanity check
+        assert(removal_indices.at(removal_indices.size() - 1) == 0);
 
         auto start = chrono::high_resolution_clock::now();
         test_n_core_(seq, removal_indices);
