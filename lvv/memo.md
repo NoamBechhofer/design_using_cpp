@@ -11,7 +11,7 @@ The purpose of this experiment was to compare the performance of the `std::list`
 
 ## Results
 
-![fig 1](./Figure_1.svg)
+![fig 1](./Figure_1.svg)  
 As can be seen in the graph above, `std::vector` is consistently faster than `std::list`. `std::list` also grows at a much faster rate than `std::vector` in relation to the number of elements inserted and removed.
 
 ## Analysis
@@ -23,24 +23,20 @@ The primary issue is that to remove a node from the middle of a linked list we n
 
 ## Takeway for Developers
 
-### direct takeaway
+### The Importance of Measuring Performance
 
-- importance of measuring performance
-  - if you're going to venture off and be clever, you need to measure performance
-    - it would be easy to assume that a list is faster, but it's not
-      - this should convince us to default to vector
-    - more generally, we should be **skeptical programmers** (we'll get to it in a second)
-  - so should I not go venture off?
-    - no, you should, but you should use the strategy of measuring performance
+The experiment highlights a crucial aspect of programming: the importance of measuring performance. As developers, it's tempting to rely on conventional wisdom or theoretical assumptions when making decisions about data structures or algorithms. However, this experiment underscores the need for empirical evidence. The assumption that a `std::list` would be faster for middle-element removals was proven incorrect in practice. 
 
-### being a skeptical programmer
+This leads us to an essential habit for developers: **being skeptical programmers**. Skepticism in programming doesn't mean doubting everything; rather, it means not accepting assertions without evidence, especially regarding performance. If you plan to deviate from standard practices or make optimizations, it is imperative to measure and validate your approach. Often, the intuitive choice isn't the most efficient one, as demonstrated in this assignment.
 
-1. don't make performance assertions without measuring them
-2. get your system off the ground before optimizing
-3. write your code modularly so it can be optimized and refactored **when the time comes**
-4. choose your abstractions wisely
-   - corrolary: if you can't figure out which abstraction to use, don't abstract yet
-5. when the time to optimize does come, test your assumptions using profiling tools
-   - don't waste your time optimizing the minor stuff. profiling might reveal bottlenecks you didn't expect that are more significant than ones you did expect.
+### Being a Skeptical Programmer
 
-## Addendum: globals vs. locals
+1. **Avoid Unsubstantiated Performance Claims**: Look for empirical evidence before making performance-related assertions. Theory and practice can diverge significantly.
+
+2. **Focus on Functionality First**: Prioritize getting your system functional before delving into optimization. At best premature optimization can lead to unnecessary complexity, at worst it can be a footgun.
+
+3. **Write Modular Code**: Develop code in a way that it can be easily optimized or refactored later.
+
+4. **Thoughtful Abstraction Choices**: Select abstractions carefully. When in doubt, it might be better to delay abstracting until a clearer understanding is developed.
+
+5. **Use Profiling Tools for Optimization**: When you do optimize, utilize profiling tools to test assumptions. Profiling can reveal bottlenecks you didn't expect, and show that bottlenecks you thought were significant were not a big deal.
