@@ -127,6 +127,7 @@ void run_tests(ostream& out = cout, ostream& err = cerr)
 
     err << "filling vector with " << VECTOR_SIZE
         << " random numbers, this might take a while\n";
+    // volatile to discourage the optimizer from eliminating the loop
     for(volatile size_t i = 0; i < VECTOR_SIZE; i = i + 1) {
         v.emplace_back(dist(gen));
     }
