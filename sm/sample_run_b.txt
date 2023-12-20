@@ -1,0 +1,7 @@
+c-style                  	27159ms	
+c-style unsigned         	42353ms	
+range for loop           	43976ms	
+for_each                 	59198ms	
+ranges::for_each         	51315ms	
+accumulate               	36413ms	
+accumulate sqrt abs      	44673ms	

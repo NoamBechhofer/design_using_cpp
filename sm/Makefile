@@ -1,7 +1,7 @@
 CC = g++
 CFLAGS = -Wall -Wpedantic -O2 -std=c++20
 TARGET = sm
-SOURCE = SimpleMeasurement.cpp
+SOURCE = sm.cpp
 
 all: $(TARGET)
 
